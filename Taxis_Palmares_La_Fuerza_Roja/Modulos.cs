@@ -73,7 +73,7 @@ namespace Taxis_Palmares_La_Fuerza_Roja
             objAplicacion.ShowDialog();
         }
 
-        private void button7_Click(object sender, EventArgs e)
+        private void button7_Click(object sender, EventArgs e)//boton para salir y cambiar de usuario
         {
             frmLogin myLogin = new frmLogin();
             this.Dispose();
