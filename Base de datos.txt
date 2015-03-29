@@ -1,0 +1,415 @@
+Create database DBTaxis_Palmares
+-----------------------------------------------
+Create table Cliente 
+( 
+Nombre varchar(25), 
+Apellido varchar(25), 
+Telefono varchar(20), 
+Direccion varchar(250)
+) 
+
+Create table Llamadas 
+( 
+
+Hora char(9), 
+Direccion varchar(250),
+NombreCliente varchar(50) 
+) 
+
+Create table Tarifas 
+( 
+Monto decimal(8,2), 
+Lugar varchar(50), 
+Distancia varchar(20), 
+Extras varchar(50)
+) 
+
+Create table Vehiculos 
+( 
+Capacidad int, 
+Ano int,
+Estado varchar(20), 
+Modelo varchar(20),
+Tipo varchar(20),
+Marca varchar(20)
+)
+
+Create table Taxistas 
+( 
+Fecha_Nacimineto varchar(15), 
+Nombre varchar(25),
+Apellido varchar(25),
+Residencia varchar(250),
+Telefono varchar(20),
+Codigo_Taxista varchar(20)
+)
+
+Create table Factura 
+(
+Monto decimal(8,2),
+Fecha Date,
+Detalles varchar(200)
+)
+
+create table TipoUsuario
+(
+Descripcion varchar(20) not null
+)
+create table usuario
+(
+password varchar(20) not null
+)
+------------------------------------------------------------
+Alter table Cliente 
+Add Cedula int primary key not null
+alter table Llamadas
+add Codigo int identity (1,1) primary key not null
+Alter table Tarifas 
+Add Id_Tarifas int identity (1,1) primary key not null
+Alter table Vehiculos
+Add Placa int primary key not null
+Alter table Taxistas
+Add Identificacion int primary key not null
+alter table Factura
+add Numero_Factura int identity (1,1) primary key not null
+Alter table TipoUsuario
+Add idTipo int primary key not null
+Alter table usuario
+Add idUsuario varchar(20) primary key not null
+---------------------------------------------------------------------------------
+Alter table Llamadas 
+Add Cliente int foreign key references Cliente (Cedula) not null
+Alter table Llamadas 
+Add Movil int foreign key references Vehiculos (Placa) not null
+Alter table Vehiculos
+Add Taxista int foreign key references Taxistas (Identificacion) not null
+Alter table Factura
+Add Vehiculo int foreign key references Vehiculos (Placa) not null
+Alter table Factura
+Add Taxista int foreign key references Taxistas (Identificacion) not null
+Alter table usuario
+Add idTipoUsuario int foreign key references TipoUsuario (idTipo) not null
+ 
+------------------------------------------------------------------------------
+----------login----------
+create procedure Sp_Login
+	@User varchar(50)
+as
+begin
+	SELECT u.idUsuario, CASE WHEN tu.Descripcion = 'Administrador'
+		THEN 1 ELSE 0 END AS EsAdmin, u.password FROM  Usuario AS u INNER
+		JOIN TipoUsuario AS tu ON tu.idTipo = u.idTipoUsuario  
+		WHERE (u.idUsuario = @User)
+end
+
+-------------------------------------
+-------------Usuario--------------
+Create procedure [dbo].[SP_Usuario]
+	@idUsuario varchar(20),
+	@password varchar(20),
+	@idTipoUsuario int,
+	@Accion int
+AS
+BEGIN
+	IF @Accion = 1
+	begin
+		INSERT INTO usuario(idUsuario, password, idTipoUsuario) VALUES (@idUsuario, @password, @idTipoUsuario);
+		return 1;
+	end
+	if @Accion = 2
+	begin
+		update usuario set password = @password, idTipoUsuario = @idTipoUsuario
+		where idUsuario = @idUsuario;
+		return 1;
+	end
+END
+-----------consulta Usuario-----------
+create procedure [dbo].[SP_ConsultaUsuario]
+	@Id int
+as 
+begin
+	if @Id != 0
+	begin
+		select us.idUsuario, us.password, us.idTipoUsuario from usuario us where us.idUsuario = @Id;
+	end
+	else
+	begin
+		select us.idUsuario, us.password, tp.Descripcion from usuario us inner join TipoUsuario tp on
+		us.idTipoUsuario = tp.idTipo;
+	end
+end
+----------------------------------
+-------------cliente--------------
+Create procedure [dbo].[SP_Cliente]
+	@Cedula int,
+	@Nombre varchar(25),
+	@Apellido varchar(25),
+	@Telefono varchar(20),
+	@Direccion varchar(250),
+	@Accion int
+AS
+BEGIN
+	IF @Accion = 1
+	begin
+		INSERT INTO Cliente(Cedula, Nombre, Apellido, Telefono, Direccion) VALUES (@Cedula, @Nombre, @Apellido, @Telefono, @Direccion);
+		return 1;
+	end
+	if @Accion = 2
+	begin
+		update Cliente set Nombre = @Nombre, Apellido = @Apellido, Telefono = @Telefono, Direccion = @Direccion 
+		where Cedula = @Cedula;
+		return 1;
+	end
+END
+-----------consulta cliente-----------
+create procedure [dbo].[SP_ConsultaCliente]
+	@Id int
+as 
+begin
+	if @Id != 0
+	begin
+		select cl.Cedula, cl.Nombre, cl.Apellido, cl.Telefono, cl.Direccion from Cliente cl where cl.Cedula = @Id;
+	end
+	else
+	begin
+		select cl.Cedula, cl.Nombre, cl.Apellido, cl.Telefono, cl.Direccion from Cliente cl;
+	end
+end
+-------------------------------------
+-------------------------------------
+-------------Llamadas--------------
+Create procedure [dbo].[SP_Llamadas]
+	@Codigo int,
+	@Hora char(9),
+	@Direccion varchar(250),
+	@Cliente int,	
+	@NombreCliente varchar(50),
+	@Movil int,
+	@Accion int
+AS
+BEGIN
+	IF @Accion = 1
+	begin
+		INSERT INTO Llamadas(Hora, Direccion, Cliente, NombreCliente, Movil) VALUES (@Hora, @Direccion, @Cliente, @NombreCliente, @Movil);
+		return 1;
+	end
+	if @Accion = 2
+	begin
+		update Llamadas set Hora = @Hora, Direccion = @Direccion, Cliente = @Cliente, NombreCliente = @NombreCliente, Movil = @Movil
+		where Codigo = @Codigo;
+		return 1;
+	end
+END
+-----------consulta Llamadas-----------
+create procedure [dbo].[SP_ConsultaLlamadas]
+	@Id int
+as 
+begin
+	if @Id != 0
+	begin
+		select lla.Codigo, lla.Hora, lla.Direccion, lla.Cliente, lla.NombreCliente, lla.Movil from Llamadas lla where lla.Codigo = @Id;
+	end
+	else
+	begin
+		select lla.Codigo, lla.Hora, lla.Direccion, lla.Cliente, lla.NombreCliente, lla.Movil from Llamadas lla;
+	end
+end
+-------------------------------------
+-------------------------------------
+-------------Tarifas--------------
+Create procedure [dbo].[SP_Tarifas]
+	@Id_Tarifas int,
+	@Monto decimal(8, 2),
+	@Lugar varchar(50),
+	@Distancia varchar(20),	
+	@Extras varchar(20),
+	@Accion int
+AS
+BEGIN
+	IF @Accion = 1
+	begin
+		INSERT INTO Tarifas(Id_Tarifas, Monto, Lugar, Distancia, Extras) VALUES (@Id_Tarifas, @Monto, @Lugar, @Distancia, @Extras);
+		return 1;
+	end
+	if @Accion = 2
+	begin
+		update Tarifas set Monto = @Monto, Lugar = @Lugar, Distancia = @Distancia, Extras = @Extras
+		where Id_Tarifas = @Id_Tarifas;
+		return 1;
+	end
+END
+-----------consulta Tarifas-----------
+create procedure [dbo].[SP_ConsultaTarifas]
+	@Id int
+as 
+begin
+	if @Id != 0
+	begin
+		select tr.Id_Tarifas, tr.Monto, tr.Lugar, tr.Distancia, tr.Extras from Tarifas tr where tr.Id_Tarifas = @Id;
+	end
+	else
+	begin
+		select tr.Id_Tarifas, tr.Monto, tr.Lugar, tr.Distancia, tr.Extras from Tarifas tr;
+	end
+end
+-------------------------------------
+-------------------------------------
+-------------Vehiculos--------------
+Create procedure [dbo].[SP_Vehiculos]
+	@Placa int,
+	@Capacidad int,
+	@Ano int,
+	@Estado varchar(20),
+	@Modelo varchar(20),
+	@Tipo varchar(20),	
+	@Marca varchar(20),
+	@Taxista int,
+	@Accion int
+AS
+BEGIN
+	IF @Accion = 1
+	begin
+		INSERT INTO Vehiculos(Placa, Capacidad, Ano, Estado, Modelo, Tipo, Marca, Taxista) VALUES (@Placa, @Capacidad, @Ano, @Estado, @Modelo, @Tipo, @Marca, @Taxista);
+		return 1;
+	end
+	if @Accion = 2
+	begin
+		update Vehiculos set Capacidad = @Capacidad, Ano = @Ano, Estado = @Estado, Modelo = @Modelo, Tipo = @Tipo, Marca = @Marca, Taxista = @Taxista
+		where Placa = @Placa;
+		return 1;
+	end
+END
+-----------consulta Vehiculos-----------
+create procedure [dbo].[SP_ConsultaVehiculos]
+	@Id int
+as 
+begin
+	if @Id != 0
+	begin
+		select vh.Placa, vh.Capacidad, vh.Ano, vh.Estado, vh.Modelo, vh.Tipo, vh.Marca, vh.Taxista from Vehiculos vh where vh.Placa = @Id;
+	end
+	else
+	begin
+		select vh.Placa, vh.Capacidad, vh.Ano, vh.Estado, vh.Modelo, vh.Tipo, vh.Marca, vh.Taxista from Vehiculos vh;
+	end
+end
+-------------------------------------
+-------------------------------------
+-------------Taxistas--------------
+Create procedure [dbo].[SP_Taxistas]
+	@Identificacion int,
+	@Fecha_Nacimineto varchar(15),
+	@Nombre varchar(25),
+	@Apellido varchar(25),
+	@Residencia varchar(250),	
+	@Telefono varchar(20),
+	@Codigo_Taxista varchar(20),
+	@Accion int
+AS
+BEGIN
+	IF @Accion = 1
+	begin
+		INSERT INTO Taxistas(Identificacion, Fecha_Nacimineto, Nombre, Apellido, Residencia, Telefono, Codigo_Taxista) VALUES (@Identificacion, @Fecha_Nacimineto, @Nombre, @Apellido, @Residencia, @Telefono, @Codigo_Taxista);
+		return 1;
+	end
+	if @Accion = 2
+	begin
+		update Taxistas set Fecha_Nacimineto = @Fecha_Nacimineto, Nombre = @Nombre, Apellido = @Apellido, Residencia = @Residencia, Telefono = @Telefono, Codigo_Taxista = @Codigo_Taxista
+		where Identificacion = @Identificacion;
+		return 1;
+	end
+END
+-----------consulta Taxistas-----------
+create procedure [dbo].[SP_ConsultaTaxistas]
+	@Id int
+as 
+begin
+	if @Id != 0
+	begin
+		select tx.Identificacion, tx.Fecha_Nacimineto, tx.Nombre, tx.Apellido, tx.Residencia, tx.Telefono, tx.Codigo_Taxista from Taxistas tx where tx.Identificacion = @Id;
+	end
+	else
+	begin
+		select tx.Identificacion, tx.Fecha_Nacimineto, tx.Nombre, tx.Apellido, tx.Residencia, tx.Telefono, tx.Codigo_Taxista from Taxistas tx;
+	end
+end
+-------------------------------------
+-------------Factura--------------
+Create procedure [dbo].[SP_Factura]
+	@Numero_Factura int,
+	@Monto decimal(8, 2),
+	@Fecha date,
+	@Detalles varchar(200),	
+	@Vehiculo int,
+	@Taxista int,
+	@Accion int
+AS
+BEGIN
+	IF @Accion = 1
+	begin
+		INSERT INTO Factura(Monto, Fecha, Detalles, Vehiculo, Taxista) VALUES (@Monto, @Fecha, @Detalles, @Vehiculo, @Taxista);
+		return 1;
+	end
+	if @Accion = 2
+	begin
+		update Factura set Monto = @Monto, Fecha = @Fecha, Detalles = @Detalles, Vehiculo = @Vehiculo, Taxista = @Taxista
+		where Numero_Factura = @Numero_Factura;
+		return 1;
+	end
+END
+-----------consulta Factura-----------
+create procedure [dbo].[SP_ConsultaFactura]
+	@Id int
+as 
+begin
+	if @Id != 0
+	begin
+		select fa.Numero_Factura, fa.Monto, fa.Fecha, fa.Detalles, fa.Vehiculo, fa.Taxista from Factura fa where fa.Numero_Factura = @Id;
+	end
+	else
+	begin
+		select fa.Numero_Factura, fa.Monto, fa.Fecha, fa.Detalles, fa.Vehiculo, fa.Taxista from Factura fa;
+	end
+end
+-------------------------------------
+----------reporte factura------------
+create procedure [dbo].[Sp_ReporteFactura]
+
+as
+begin
+
+	select f.Numero_Factura as 'N° Factura', f.Fecha, '¢'+Convert(varchar,f.Monto) as 'Monto', f.Vehiculo, f.Taxista, f.Detalles 
+	from Factura f
+
+end
+-------------------------------------
+----------reporte Llamada------------
+create procedure [dbo].[Sp_ReporteLlamada]
+
+as
+begin
+
+	select l.Codigo as 'N° Llamada', l.Hora, l.Cliente, l.NombreCliente, l.Movil , l.Direccion
+	from Llamadas l
+
+end
+--------------------------------------
+----------reporte vehiculo------------
+create procedure [dbo].[Sp_Reportevehiculo]
+
+as
+begin
+
+	select v.Placa, v.Capacidad, v.Ano, v.Estado, v.Modelo, v.Tipo, v.Marca, v.Taxista
+	from Vehiculos v
+
+end
+-------------------------------------
+----------reporte taxista------------
+create procedure [dbo].[Sp_Reportetaxista]
+as
+begin
+	select t.Identificacion, t.Fecha_Nacimineto, t.Nombre, t.Apellido, t.Telefono, t.Codigo_Taxista, t.Residencia
+	from Taxistas t
+end
+-----------
